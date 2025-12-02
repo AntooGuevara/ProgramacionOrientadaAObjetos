@@ -17,7 +17,7 @@ class View:
         Button(ventana, text=text, command=cmd).pack(pady=10)
 
     @staticmethod
-    def menu_generico(ventana, titulo, opciones, volver=None):
+    def menu_inicial(ventana, titulo, opciones, volver=None):
         """
         opciones = [(texto_boton, funcion), ...]
         """
@@ -38,20 +38,20 @@ class View:
 
     @staticmethod
     def menu_principal(ventana):
-        View.menu_generico(
+        View.menu_inicial(
             ventana,
             "..:: Menú Principal ::..",
             [
                 ("1.- Autos",  lambda: View.menu_autos(ventana)),
-                ("2.- Camionetas", lambda: View.menu_vehiculos(ventana, "Camionetas")),
-                ("3.- Camiones", lambda: View.menu_vehiculos(ventana, "Camiones")),
+                ("2.- Camionetas", lambda: View.menu_camionetas(ventana, "Camionetas")),
+                ("3.- Camiones", lambda: View.menu_camiones(ventana, "Camiones")),
                 ("4.- Salir", ventana.quit)
             ]
         )
 
     @staticmethod
     def menu_autos(ventana):
-        View.menu_generico(
+        View.menu_inicial(
             ventana,
             "..:: Menú Autos ::..",
             [
@@ -64,12 +64,26 @@ class View:
         )
 
     @staticmethod
-    def menu_vehiculos(ventana, tipo):
-        View.menu_generico(
+    def menu_camionetas(ventana, tipo):
+        View.menu_inicial(
             ventana,
             f"..:: Menú {tipo} ::..",
             [
-                ("1.- Insertar", lambda: View.auto_registro(ventana)),
+                ("1.- Insertar", lambda: View.insertar_camioneta(ventana)),
+                ("2.- Consultar", lambda: View.auto_consultar(ventana)),
+                ("3.- Actualizar", lambda: View.auto_id(ventana, "cambiar")),
+                ("4.- Eliminar", lambda: View.auto_id(ventana, "eliminar")),
+            ],
+            lambda: View.menu_principal(ventana)
+        )
+
+    @staticmethod
+    def menu_camiones(ventana, tipo):
+        View.menu_inicial(
+            ventana,
+            f"..:: Menú {tipo} ::..",
+            [
+                ("1.- Insertar", lambda: View.insertar_camiones(ventana)),
                 ("2.- Consultar", lambda: View.auto_consultar(ventana)),
                 ("3.- Actualizar", lambda: View.auto_id(ventana, "cambiar")),
                 ("4.- Eliminar", lambda: View.auto_id(ventana, "eliminar")),
@@ -100,6 +114,50 @@ class View:
 
         list(entradas.values())[0].focus()
 
+    @staticmethod
+    def insertar_camiones(ventana):
+        View.borrar(ventana)
+        View.titulo(ventana, "...: Registro de Camiones :...")
+
+        campos = ["Marca", "Color", "Modelo", "Velocidad", "Potencia", "Nro Plazas", "#Ejes","Capacidad de Carga"]
+        entradas = {}
+
+        for c in campos:
+            Label(ventana, text=f"{c}: ").pack()
+            e = Entry(ventana)
+            e.pack()
+            entradas[c] = e
+
+        def guardar():
+            messagebox.showinfo("Guardar", "Registro correcto")
+            View.menu_autos(ventana)
+
+        View.boton(ventana, "Guardar", guardar)
+        View.boton(ventana, "Volver", lambda: View.menu_autos(ventana))
+
+        list(entradas.values())[0].focus()
+
+    @staticmethod
+    def insertar_camioneta(ventana):
+        View.borrar(ventana)
+        View.titulo(ventana, "...: Registro de Camionetas :...")
+        campos=["Marca","Color","Modelo","Velocidad","Potencia","Caballaje","Nro Plazas","Tracción","Cerrada"]
+        entradas={}
+        for c in campos:
+            Label(ventana,text=f"{c}: ").pack()
+            e=Entry(ventana)
+            e.pack()
+            entradas[c]=e
+
+            def guardar():
+                messagebox.showinfo("Guardar", "Registro correcto")
+                View.menu_autos(ventana)
+
+        View.boton(ventana, "Guardar", guardar)
+        View.boton(ventana, "Volver", lambda: View.menu_autos(ventana))
+
+        list(entradas.values())[0].focus()
+            
     @staticmethod
     def auto_consultar(ventana):
         View.borrar(ventana)
