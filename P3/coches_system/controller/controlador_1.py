@@ -1,48 +1,80 @@
-from tkinter import messagebox
-from model.cochesBD import Autos, Camionetas, Camiones
+import mysql.connector
 
+class Controller:
 
-class Controlador:
+    @staticmethod
+    def conexion():
+        return mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",   # tu contraseña si tienes
+            database="bd_coches"
+        )
 
-# ----------------------------------------------------
-# AUTOS
-# ----------------------------------------------------
+    # ======================================================
+    #                    AUTOS
+    # ======================================================
 
     @staticmethod
     def insertar_auto(datos):
-        try:
-            a = Autos(
-                datos["Marca"],
-                datos["Color"],
-                datos["Modelo"],
-                datos["Velocidad"],
-                datos["Potencia"],
-                datos["Nro Plazas"]
-            )
-            if a.insertar():
-                messagebox.showinfo("Guardar", "Auto registrado correctamente")
-            else:
-                messagebox.showerror("Error", "No se pudo guardar el auto")
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
+        conn = Controller.conexion()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO autos (marca, color, modelo, velocidad, caballaje, plazas)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            datos["Marca"],
+            datos["Color"],
+            datos["Modelo"],
+            datos["Velocidad"],
+            datos["Potencia"],     # Potencia = caballaje
+            datos["Nro Plazas"]
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
 
 
     @staticmethod
     def consultar_autos():
-        registros = Autos.consultar()
-        if not registros:
-            return "No hay autos registrados"
-        
-        texto = ""
-        for fila in registros:
-            texto += f"ID: {fila[0]} | Marca: {fila[1]} | Modelo: {fila[3]} | Plazas: {fila[6]}\n"
+        conn = Controller.conexion()
+        cur = conn.cursor()
 
+        cur.execute("SELECT * FROM autos")
+        filas = cur.fetchall()
+
+        conn.close()
+
+        texto = ""
+        for f in filas:
+            texto += str(f) + "\n"
         return texto
 
 
     @staticmethod
+    def eliminar_auto(id):
+        conn = Controller.conexion()
+        cur = conn.cursor()
+
+        cur.execute("DELETE FROM autos WHERE id_carro=%s", (id,))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+
+    @staticmethod
     def actualizar_auto(id, datos):
-        ok = Autos.actualizar(
+        conn = Controller.conexion()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE autos SET
+            marca=%s, color=%s, modelo=%s, velocidad=%s, caballaje=%s, plazas=%s
+            WHERE id_carro=%s
+        """, (
             datos["Marca"],
             datos["Color"],
             datos["Modelo"],
@@ -50,152 +82,174 @@ class Controlador:
             datos["Potencia"],
             datos["Nro Plazas"],
             id
-        )
+        ))
 
-        if ok:
-            messagebox.showinfo("Actualizar", f"Auto {id} actualizado correctamente")
-        else:
-            messagebox.showerror("Error", "No se pudo actualizar el auto")
-
-
-    @staticmethod
-    def eliminar_auto(id):
-        ok = Autos.eliminar(id)
-        if ok:
-            messagebox.showinfo("Eliminar", f"Auto {id} eliminado correctamente")
-        else:
-            messagebox.showerror("Error", "No se pudo eliminar el auto")
+        conn.commit()
+        cur.close()
+        conn.close()
 
 
-
-# ----------------------------------------------------
-# CAMIONETAS
-# ----------------------------------------------------
+    # ======================================================
+    #                    CAMIONETAS
+    # ======================================================
 
     @staticmethod
     def insertar_camioneta(datos):
-        try:
-            ok = Camionetas.insertar(
-                datos["Marca"],
-                datos["Color"],
-                datos["Modelo"],
-                datos["Velocidad"],
-                datos["Potencia"],
-                "4",    # plazas default
-                "4x4",  # traccion default
-                "No"    # cerrada default
-            )
-            if ok:
-                messagebox.showinfo("Guardar", "Camioneta registrada correctamente")
-            else:
-                messagebox.showerror("Error", "No se pudo guardar la camioneta")
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
+        conn = Controller.conexion()
+        cur = conn.cursor()
+
+        # Convertir "Si/No" a 1/0
+        cerrada = 1 if datos["Cerrada"].lower() == "si" else 0
+
+        cur.execute("""
+            INSERT INTO camionetas (marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            datos["Marca"],
+            datos["Color"],
+            datos["Modelo"],
+            datos["Velocidad"],
+            datos["Potencia"],
+            datos["Nro Plazas"],
+            datos["Traccion"],
+            cerrada
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
 
 
     @staticmethod
     def consultar_camionetas():
-        registros = Camionetas.consultar()
-        if not registros:
-            return "No hay camionetas registradas"
-        
+        conn = Controller.conexion()
+        cur = conn.cursor()
+
+        cur.execute("SELECT * FROM camionetas")
+        filas = cur.fetchall()
+
+        conn.close()
+
         texto = ""
-        for fila in registros:
-            texto += f"ID: {fila[0]} | Marca: {fila[1]} | Modelo: {fila[3]}\n"
-
+        for f in filas:
+            texto += str(f) + "\n"
         return texto
-
-
-    @staticmethod
-    def actualizar_camioneta(id, datos):
-        ok = Camionetas.actualizar(
-            datos["Marca"],
-            datos["Color"],
-            datos["Modelo"],
-            datos["Velocidad"],
-            datos["Potencia"],
-            "4",
-            "4x4",
-            "No",
-            id
-        )
-        if ok:
-            messagebox.showinfo("Actualizar", f"Camioneta {id} actualizada correctamente")
-        else:
-            messagebox.showerror("Error", "No se pudo actualizar la camioneta")
 
 
     @staticmethod
     def eliminar_camioneta(id):
-        ok = Camionetas.eliminar(id)
-        if ok:
-            messagebox.showinfo("Eliminar", f"Camioneta {id} eliminada correctamente")
-        else:
-            messagebox.showerror("Error", "No se pudo eliminar la camioneta")
+        conn = Controller.conexion()
+        cur = conn.cursor()
 
+        cur.execute("DELETE FROM camionetas WHERE id_camionetas=%s", (id,))
 
-
-# ----------------------------------------------------
-# CAMIONES
-# ----------------------------------------------------
-
-    @staticmethod
-    def insertar_camion(datos):
-        try:
-            ok = Camiones.insertar(
-                datos["Marca"],
-                datos["Color"],
-                datos["Modelo"],
-                datos["Velocidad"],
-                datos["Potencia"],
-                "2",   # plazas default
-                "6",   # eje default
-                "8000" # capacidad
-            )
-            if ok:
-                messagebox.showinfo("Guardar", "Camión registrado correctamente")
-            else:
-                messagebox.showerror("Error", "No se pudo guardar el camión")
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
+        conn.commit()
+        cur.close()
+        conn.close()
 
 
     @staticmethod
-    def consultar_camiones():
-        registros = Camiones.consultar()
-        if not registros:
-            return "No hay camiones registrados"
-        
-        texto = ""
-        for fila in registros:
-            texto += f"ID: {fila[0]} | Marca: {fila[1]} | Modelo: {fila[3]}\n"
+    def actualizar_camioneta(id, datos):
+        conn = Controller.conexion()
+        cur = conn.cursor()
 
-        return texto
+        cerrada = 1 if datos["Cerrada"].lower() == "si" else 0
 
-
-    @staticmethod
-    def actualizar_camion(id, datos):
-        ok = Camiones.actualizar(
+        cur.execute("""
+            UPDATE camionetas SET
+            marca=%s, color=%s, modelo=%s, velocidad=%s, caballaje=%s, plazas=%s, traccion=%s, cerrada=%s
+            WHERE id_camionetas=%s
+        """, (
             datos["Marca"],
             datos["Color"],
             datos["Modelo"],
             datos["Velocidad"],
             datos["Potencia"],
-            "2",
-            "6",
-            "8000",
+            datos["Nro Plazas"],
+            datos["Traccion"],
+            cerrada,
             id
-        )
-        if ok:
-            messagebox.showinfo("Actualizar", f"Camión {id} actualizado correctamente")
-        else:
-            messagebox.showerror("Error", "No se pudo actualizar el camión")
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+
+    # ======================================================
+    #                      CAMIONES
+    # ======================================================
+
+    @staticmethod
+    def insertar_camion(datos):
+        conn = Controller.conexion()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO camiones (marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadCarga)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            datos["Marca"],
+            datos["Color"],
+            datos["Modelo"],
+            datos["Velocidad"],
+            datos["Potencia"],
+            2,      # plazas por defecto
+            2,      # eje por defecto
+            1000    # capacidad carga defecto
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+
+    @staticmethod
+    def consultar_camiones():
+        conn = Controller.conexion()
+        cur = conn.cursor()
+
+        cur.execute("SELECT * FROM camiones")
+        filas = cur.fetchall()
+
+        conn.close()
+
+        texto = ""
+        for f in filas:
+            texto += str(f) + "\n"
+        return texto
 
 
     @staticmethod
     def eliminar_camion(id):
-        ok = Camiones.eliminar(id)
-        if ok:
-            messagebox.showinfo("Eliminar", f"Camión {id} eliminado correctamente")
-        else:
-            messagebox.showerror("Error", "No se pudo eliminar el camión")
+        conn = Controller.conexion()
+        cur = conn.cursor()
+
+        cur.execute("DELETE FROM camiones WHERE id_camion=%s", (id,))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+
+    @staticmethod
+    def actualizar_camion(id, datos):
+        conn = Controller.conexion()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE camiones SET
+            marca=%s, color=%s, modelo=%s, velocidad=%s, caballaje=%s
+            WHERE id_camion=%s
+        """, (
+            datos["Marca"],
+            datos["Color"],
+            datos["Modelo"],
+            datos["Velocidad"],
+            datos["Potencia"],
+            id
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
