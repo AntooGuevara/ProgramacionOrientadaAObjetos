@@ -2,6 +2,45 @@ from tkinter import *
 from tkinter import messagebox
 from controller.controlador_1 import Controller
 
+# ============================================================
+#        UTILIDAD PARA DAR FORMATO TABULAR A CONSULTAS
+# ============================================================
+
+def tabla_formato_campos(campos, filas):
+    if not filas:
+        return "No hay registros disponibles.\n"
+
+    # Calcular ancho de columnas
+    anchos = []
+    for i, campo in enumerate(campos):
+        ancho = max(len(str(campo)), max(len(str(f[i])) for f in filas))
+        anchos.append(ancho)
+
+    # Encabezado
+    texto = ""
+    for campo, ancho in zip(campos, anchos):
+        texto += campo.ljust(ancho + 2)
+    texto += "\n"
+
+    # Separador
+    for ancho in anchos:
+        texto += "-" * (ancho + 2)
+    texto += "\n"
+
+    # Filas
+    for fila in filas:
+        for dato, ancho in zip(fila, anchos):
+            texto += str(dato).ljust(ancho + 2)
+        texto += "\n"
+
+    return texto
+
+
+
+# ============================================================
+#                         VISTA
+# ============================================================
+
 class View:
 
     @staticmethod
@@ -15,11 +54,15 @@ class View:
 
     @staticmethod
     def boton(ventana, text, cmd):
-        Button(ventana, text=text, width=20, command=cmd).pack(pady=6)
+        Button(ventana, text=text, width=22, command=cmd).pack(pady=6)
+
+
+    # ======================================================
+    #     FORMULARIO GENERICO
+    # ======================================================
 
     @staticmethod
     def formulario_generico(ventana, titulo, campos, guardar_cmd, volver_cmd):
-
         View.borrar(ventana)
         View.titulo(ventana, titulo)
 
@@ -41,6 +84,11 @@ class View:
         View.boton(ventana, "Guardar", guardar)
         View.boton(ventana, "Volver", volver_cmd)
 
+
+    # ======================================================
+    #        PEDIR ID
+    # ======================================================
+
     @staticmethod
     def pedir_id(ventana, titulo, aceptar_cmd, volver_cmd):
 
@@ -54,12 +102,14 @@ class View:
         def enviar():
             aceptar_cmd(var.get())
 
-        View.boton(ventana, "Buscar", enviar)
+        View.boton(ventana, "Aceptar", enviar)
         View.boton(ventana, "Volver", volver_cmd)
 
-    # ========================================================
-    #                   MENU PRINCIPAL
-    # ========================================================
+
+
+    # ======================================================
+    #                    PRINCIPAL
+    # ======================================================
 
     def __init__(self, ventana):
         ventana.title("..: Coches System :..")
@@ -67,20 +117,22 @@ class View:
         ventana.resizable(False, False)
         View.menu_principal(ventana)
 
+
     @staticmethod
     def menu_principal(ventana):
-
         View.borrar(ventana)
         View.titulo(ventana, "..:: Menú Principal ::..")
 
         View.boton(ventana, "1.- Autos", lambda: View.menu_autos(ventana))
         View.boton(ventana, "2.- Camionetas", lambda: View.menu_camionetas(ventana))
         View.boton(ventana, "3.- Camiones", lambda: View.menu_camiones(ventana))
-        View.boton(ventana, "4.- Salir", ventana.quit)
+        View.boton(ventana, "Salir", ventana.quit)
 
-    # ========================================================
-    #                        AUTOS
-    # ========================================================
+
+
+    # ======================================================
+    #                    AUTOS
+    # ======================================================
 
     @staticmethod
     def menu_autos(ventana):
@@ -88,17 +140,15 @@ class View:
         View.borrar(ventana)
         View.titulo(ventana, "..:: Menú Autos ::..")
 
-        View.boton(ventana, "1.- Insertar", lambda: View.form_auto(ventana))
-        View.boton(ventana, "2.- Consultar", lambda: View.mostrar_autos(ventana))
-        View.boton(ventana, "3.- Actualizar", lambda: View.auto_id(ventana, "actualizar"))
-        View.boton(ventana, "4.- Eliminar", lambda: View.auto_id(ventana, "eliminar"))
-
-        View.boton(ventana, "Regresar", lambda: View.menu_principal(ventana))
+        View.boton(ventana, "Insertar", lambda: View.form_auto(ventana))
+        View.boton(ventana, "Consultar", lambda: View.mostrar_autos(ventana))
+        View.boton(ventana, "Actualizar", lambda: View.auto_id(ventana, "actualizar"))
+        View.boton(ventana, "Eliminar", lambda: View.auto_id(ventana, "eliminar"))
+        View.boton(ventana, "Volver", lambda: View.menu_principal(ventana))
 
 
     @staticmethod
     def form_auto(ventana):
-
         def guardar(datos):
             Controller.insertar_auto(datos)
             messagebox.showinfo("Guardar", "Auto registrado correctamente")
@@ -114,19 +164,26 @@ class View:
             lambda: View.menu_autos(ventana)
         )
 
+
     @staticmethod
     def mostrar_autos(ventana):
-
         View.borrar(ventana)
         View.titulo(ventana, "...: Consulta de Autos :...")
 
         txt = Text(ventana, height=20, width=80)
         txt.pack(pady=10)
 
-        txt.insert(END, Controller.consultar_autos())
+        filas = Controller.consultar_autos(raw=True)
+
+        campos = ["ID", "Marca", "Color", "Modelo", "Vel", "Cab", "Plz"]
+
+        texto = tabla_formato_campos(campos, filas)
+
+        txt.insert(END, texto)
         txt.config(state=DISABLED)
 
         View.boton(ventana, "Volver", lambda: View.menu_autos(ventana))
+
 
     @staticmethod
     def auto_id(ventana, tipo):
@@ -145,12 +202,13 @@ class View:
                 lambda: View.menu_autos(ventana),
             )
 
+
     @staticmethod
     def editar_auto(ventana, id):
 
         def guardar(datos):
             Controller.actualizar_auto(id, datos)
-            messagebox.showinfo("Actualizar", f"Auto {id} actualizado correctamente")
+            messagebox.showinfo("Actualizar", f"Auto {id} actualizado")
             View.menu_autos(ventana)
 
         campos = ["Marca", "Color", "Modelo", "Velocidad", "Potencia", "Nro Plazas"]
@@ -163,16 +221,18 @@ class View:
             lambda: View.menu_autos(ventana)
         )
 
+
     @staticmethod
     def borrar_auto(ventana, id):
         Controller.eliminar_auto(id)
-        messagebox.showinfo("Eliminar", f"Auto {id} eliminado correctamente")
+        messagebox.showinfo("Eliminar", f"Auto {id} eliminado")
         View.menu_autos(ventana)
 
 
-    # ========================================================
+
+    # ======================================================
     #                    CAMIONETAS
-    # ========================================================
+    # ======================================================
 
     @staticmethod
     def menu_camionetas(ventana):
@@ -180,12 +240,11 @@ class View:
         View.borrar(ventana)
         View.titulo(ventana, "..:: Menú Camionetas ::..")
 
-        View.boton(ventana, "1.- Insertar", lambda: View.form_camioneta(ventana))
-        View.boton(ventana, "2.- Consultar", lambda: View.mostrar_camionetas(ventana))
-        View.boton(ventana, "3.- Actualizar", lambda: View.camioneta_id(ventana, "actualizar"))
-        View.boton(ventana, "4.- Eliminar", lambda: View.camioneta_id(ventana, "eliminar"))
-
-        View.boton(ventana, "Regresar", lambda: View.menu_principal(ventana))
+        View.boton(ventana, "Insertar", lambda: View.form_camioneta(ventana))
+        View.boton(ventana, "Consultar", lambda: View.mostrar_camionetas(ventana))
+        View.boton(ventana, "Actualizar", lambda: View.camioneta_id(ventana, "actualizar"))
+        View.boton(ventana, "Eliminar", lambda: View.camioneta_id(ventana, "eliminar"))
+        View.boton(ventana, "Volver", lambda: View.menu_principal(ventana))
 
 
     @staticmethod
@@ -216,7 +275,13 @@ class View:
         txt = Text(ventana, height=20, width=80)
         txt.pack(pady=10)
 
-        txt.insert(END, Controller.consultar_camionetas())
+        filas = Controller.consultar_camionetas(raw=True)
+
+        campos = ["ID","Marca","Color","Modelo","Vel","Cab","Plz","Traccion","Cerr"]
+
+        texto = tabla_formato_campos(campos, filas)
+
+        txt.insert(END, texto)
         txt.config(state=DISABLED)
 
         View.boton(ventana, "Volver", lambda: View.menu_camionetas(ventana))
@@ -239,12 +304,13 @@ class View:
                 lambda: View.menu_camionetas(ventana),
             )
 
+
     @staticmethod
     def editar_camioneta(ventana, id):
 
         def guardar(datos):
             Controller.actualizar_camioneta(id, datos)
-            messagebox.showinfo("Actualizar", f"Camioneta {id} actualizada correctamente")
+            messagebox.showinfo("Actualizar", f"Camioneta {id} actualizada")
             View.menu_camionetas(ventana)
 
         campos = ["Marca", "Color", "Modelo", "Velocidad", "Potencia", "Nro Plazas", "Traccion", "Cerrada"]
@@ -257,16 +323,18 @@ class View:
             lambda: View.menu_camionetas(ventana)
         )
 
+
     @staticmethod
     def borrar_camioneta(ventana, id):
         Controller.eliminar_camioneta(id)
-        messagebox.showinfo("Eliminar", f"Camioneta {id} eliminada correctamente")
+        messagebox.showinfo("Eliminar", f"Camioneta {id} eliminada")
         View.menu_camionetas(ventana)
 
 
-    # ========================================================
-    #                      CAMIONES
-    # ========================================================
+
+    # ======================================================
+    #                    CAMIONES
+    # ======================================================
 
     @staticmethod
     def menu_camiones(ventana):
@@ -274,12 +342,12 @@ class View:
         View.borrar(ventana)
         View.titulo(ventana, "..:: Menú Camiones ::..")
 
-        View.boton(ventana, "1.- Insertar", lambda: View.form_camion(ventana))
-        View.boton(ventana, "2.- Consultar", lambda: View.mostrar_camiones(ventana))
-        View.boton(ventana, "3.- Actualizar", lambda: View.camion_id(ventana, "actualizar"))
-        View.boton(ventana, "4.- Eliminar", lambda: View.camion_id(ventana, "eliminar"))
+        View.boton(ventana, "Insertar", lambda: View.form_camion(ventana))
+        View.boton(ventana, "Consultar", lambda: View.mostrar_camiones(ventana))
+        View.boton(ventana, "Actualizar", lambda: View.camion_id(ventana, "actualizar"))
+        View.boton(ventana, "Eliminar", lambda: View.camion_id(ventana, "eliminar"))
+        View.boton(ventana, "Volver", lambda: View.menu_principal(ventana))
 
-        View.boton(ventana, "Regresar", lambda: View.menu_principal(ventana))
 
     @staticmethod
     def form_camion(ventana):
@@ -289,7 +357,7 @@ class View:
             messagebox.showinfo("Guardar", "Camión registrado correctamente")
             View.menu_camiones(ventana)
 
-        campos = ["Marca", "Color", "Modelo", "Velocidad", "Potencia"]
+        campos = ["Marca","Color","Modelo","Velocidad","Potencia","Nro Plazas","Eje","Capacidad Carga"]
 
         View.formulario_generico(
             ventana,
@@ -298,6 +366,7 @@ class View:
             guardar,
             lambda: View.menu_camiones(ventana)
         )
+
 
     @staticmethod
     def mostrar_camiones(ventana):
@@ -308,10 +377,17 @@ class View:
         txt = Text(ventana, height=20, width=80)
         txt.pack(pady=10)
 
-        txt.insert(END, Controller.consultar_camiones())
+        filas = Controller.consultar_camiones(raw=True)
+
+        campos = ["ID","Marca","Color","Modelo","Vel","Cab","Plz","Eje","Carga"]
+
+        texto = tabla_formato_campos(campos, filas)
+
+        txt.insert(END, texto)
         txt.config(state=DISABLED)
 
         View.boton(ventana, "Volver", lambda: View.menu_camiones(ventana))
+
 
     @staticmethod
     def camion_id(ventana, tipo):
@@ -330,15 +406,16 @@ class View:
                 lambda: View.menu_camiones(ventana),
             )
 
+
     @staticmethod
     def editar_camion(ventana, id):
 
         def guardar(datos):
             Controller.actualizar_camion(id, datos)
-            messagebox.showinfo("Actualizar", f"Camión {id} actualizado correctamente")
+            messagebox.showinfo("Actualizar", f"Camión {id} actualizado")
             View.menu_camiones(ventana)
 
-        campos = ["Marca", "Color", "Modelo", "Velocidad", "Potencia"]
+        campos = ["Marca","Color","Modelo","Velocidad","Potencia","Nro Plazas","Eje","Capacidad Carga"]
 
         View.formulario_generico(
             ventana,
@@ -348,8 +425,9 @@ class View:
             lambda: View.menu_camiones(ventana)
         )
 
+
     @staticmethod
     def borrar_camion(ventana, id):
         Controller.eliminar_camion(id)
-        messagebox.showinfo("Eliminar", f"Camión {id} eliminado correctamente")
+        messagebox.showinfo("Eliminar", f"Camión {id} eliminado")
         View.menu_camiones(ventana)
