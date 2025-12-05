@@ -38,19 +38,17 @@ class Controller:
 
 
     @staticmethod
-    def consultar_autos():
+    def consultar_autos(raw=False):
         conn = Controller.conexion()
         cur = conn.cursor()
-
-        cur.execute("SELECT * FROM autos")
+        cur.execute("SELECT id_carro, marca, color, modelo, velocidad, caballaje, plazas FROM autos")
         filas = cur.fetchall()
-
         conn.close()
 
-        texto = ""
-        for f in filas:
-            texto += str(f) + "\n"
-        return texto
+        if raw:
+            return filas
+
+        return "\n".join(str(f) for f in filas)
 
 
     @staticmethod
@@ -121,20 +119,17 @@ class Controller:
 
 
     @staticmethod
-    def consultar_camionetas():
+    def consultar_camionetas(raw=False):
         conn = Controller.conexion()
         cur = conn.cursor()
-
-        cur.execute("SELECT * FROM camionetas")
+        cur.execute("SELECT id_camionetas, marca, color, modelo, velocidad, caballaje, plazas, traccion, cerrada FROM camionetas")
         filas = cur.fetchall()
-
         conn.close()
 
-        texto = ""
-        for f in filas:
-            texto += str(f) + "\n"
-        return texto
+        if raw:
+            return filas
 
+        return "\n".join(str(f) for f in filas)
 
     @staticmethod
     def eliminar_camioneta(id):
@@ -194,9 +189,9 @@ class Controller:
             datos["Modelo"],
             datos["Velocidad"],
             datos["Potencia"],
-            2,      # plazas por defecto
-            2,      # eje por defecto
-            1000    # capacidad carga defecto
+            datos["Nro Plazas"],
+            datos["Eje"],
+            datos["Capacidad Carga"]
         ))
 
         conn.commit()
@@ -205,19 +200,18 @@ class Controller:
 
 
     @staticmethod
-    def consultar_camiones():
+    def consultar_camiones(raw=False):
         conn = Controller.conexion()
         cur = conn.cursor()
-
-        cur.execute("SELECT * FROM camiones")
+        cur.execute("SELECT id_camion, marca, color, modelo, velocidad, caballaje, plazas, eje, capacidadCarga FROM camiones")
         filas = cur.fetchall()
-
         conn.close()
 
-        texto = ""
-        for f in filas:
-            texto += str(f) + "\n"
-        return texto
+        if raw:
+            return filas
+
+        return "\n".join(str(f) for f in filas)
+
 
 
     @staticmethod
@@ -239,7 +233,8 @@ class Controller:
 
         cur.execute("""
             UPDATE camiones SET
-            marca=%s, color=%s, modelo=%s, velocidad=%s, caballaje=%s
+            marca=%s, color=%s, modelo=%s, velocidad=%s, caballaje=%s,
+            plazas=%s, eje=%s, capacidadCarga=%s
             WHERE id_camion=%s
         """, (
             datos["Marca"],
@@ -247,6 +242,9 @@ class Controller:
             datos["Modelo"],
             datos["Velocidad"],
             datos["Potencia"],
+            datos["Nro Plazas"],
+            datos["Eje"],
+            datos["Capacidad Carga"],
             id
         ))
 
